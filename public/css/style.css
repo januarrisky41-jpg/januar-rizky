@@ -1,0 +1,48 @@
+body{
+    background:#f5f7fa;
+    font-family:Arial, sans-serif;
+}
+
+.hero-section{
+    height:70vh;
+    background:linear-gradient(rgba(0,0,0,.5), rgba(0,0,0,.5)),
+    url('https://picsum.photos/1920/1080');
+    background-size:cover;
+    background-position:center;
+}
+
+.property-card{
+    border-radius:20px;
+    overflow:hidden;
+    transition:0.3s;
+    box-shadow:0 4px 15px rgba(0,0,0,0.1);
+}
+
+.property-card:hover{
+    transform:translateY(-10px);
+}
+
+.card{
+    border-radius:20px;
+}
+
+.form-control,
+.form-select{
+    border-radius:12px;
+    padding:12px;
+}
+
+.btn-primary{
+    padding:12px;
+    border-radius:12px;
+    background:#005BAC;
+    border:none;
+}
+
+.btn-primary:hover{
+    background:#004b8c;
+}
+
+.property-card{
+    cursor:pointer;
+}
