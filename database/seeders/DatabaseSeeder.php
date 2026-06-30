@@ -28,7 +28,6 @@ class DatabaseSeeder extends Seeder
         ];
 
         $propertyNames = [
-
             'Grand Emerald Residence',
             'Royal Park Residence',
             'Green Lake City',
@@ -39,7 +38,6 @@ class DatabaseSeeder extends Seeder
             'Puri Surya Jaya',
             'The Royal Living',
             'Emerald Garden Residence',
-
             'Taman Cendana Residence',
             'Green Village Estate',
             'Grand Kahuripan',
@@ -50,137 +48,68 @@ class DatabaseSeeder extends Seeder
             'Golden Residence',
             'Royal Green Estate',
             'The Green Residence',
-
-            'Grand Gresik Estate',
-            'Bukit Gresik Residence',
-            'Green Valley Residence',
-            'Royal Gresik Living',
-            'Emerald Village',
-            'Harmony Residence',
-            'Golden Village',
-            'The Harmony Living',
-            'Grand Harmony Residence',
-            'Cendana Residence',
-
-            'Malang Hills Residence',
-            'Green Mountain Estate',
-            'Royal Malang Residence',
-            'The Highland Living',
-            'Golden Valley Residence',
-            'Araya Residence',
-            'Permata Hills',
-            'Emerald Park Residence',
-            'The Green Park',
-            'Harmony Hills',
-
-            'Mojokerto Green Village',
-            'Royal Mojokerto Residence',
-            'Permata Mojokerto',
-            'Golden Village Estate',
-            'The Green Living',
-            'Grand Village Residence',
-            'Harmony Estate',
-            'Emerald Estate',
-            'The Royal Estate',
-            'Cendana Village',
-
-            'Kediri Garden Estate',
-            'Grand Kediri Residence',
-            'Royal Kediri Living',
-            'Golden Kediri Residence',
-            'Harmony Kediri Estate',
-
-            'Jombang City Residence',
-            'Grand Jombang Living',
-            'Royal Jombang Estate',
-            'Green Jombang Residence',
-            'Harmony Village',
-
-            'Lamongan Green Residence',
-            'Grand Lamongan Estate',
-            'Royal Lamongan Living',
-            'Golden Lamongan Residence',
-            'Harmony Lamongan Village',
-
-            'Madiun Green Estate',
-            'Grand Madiun Residence',
-            'Royal Madiun Living',
-            'Golden Madiun Residence',
-            'Harmony Madiun Estate'
         ];
 
+        // DESKRIPSI YANG LEBIH VARIATIF DAN PROFESIONAL
+        $descriptions = [
+            'Kawasan elit dengan akses langsung ke pusat bisnis dan perbelanjaan. Dilengkapi dengan fasilitas clubhouse, kolam renang, dan taman bermain anak yang luas.',
+            'Hunian eksklusif dengan konsep modern minimalis. Terletak di kawasan strategis dengan akses mudah ke tol, stasiun kereta, dan pusat perbelanjaan terdekat.',
+            'Perumahan dengan konsep resort living yang menawarkan ketenangan dan kenyamanan. Didukung dengan keamanan 24 jam dan area hijau yang asri.',
+            'Lokasi premium di jantung kota dengan aksesibilitas tinggi. Dekat dengan sekolah internasional, rumah sakit, dan berbagai fasilitas umum lainnya.',
+            'Dirancang untuk keluarga modern dengan konsep terbuka dan pencahayaan alami. Lingkungan yang aman dan nyaman dengan akses ke berbagai fasilitas publik.',
+            'Perpaduan sempurna antara kenyamanan dan kemewahan. Terletak di area dengan view pegunungan dan udara segar, cocok untuk gaya hidup sehat.',
+            'Kompleks perumahan dengan konsep smart living yang terintegrasi dengan teknologi modern. Dilengkapi dengan sistem keamanan canggih dan lingkungan ramah lingkungan.',
+            'Berlokasi di kawasan berkembang dengan potensi investasi tinggi. Dekat dengan pusat pemerintahan, kawasan bisnis, dan berbagai fasilitas pendukung.',
+            'Hunian dengan arsitektur kontemporer dan desain interior fungsional. Menawarkan privasi maksimal dengan lingkungan yang tenang dan asri.',
+            'Perumahan terpadu dengan berbagai fasilitas seperti sekolah, klinik, dan pusat perbelanjaan. Akses mudah ke berbagai titik strategis di kota.',
+        ];
+
+        // GAMBAR RUMAH
         $images = [
-
-            'https://images.unsplash.com/photo-1568605114967-8130f3a36994',
-
-            'https://images.unsplash.com/photo-1570129477492-45c003edd2be',
-
-            'https://images.unsplash.com/photo-1494526585095-c41746248156',
-
-            'https://images.unsplash.com/photo-1512917774080-9991f1c4c750',
-
-            'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688'
+            'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800',
+            'https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=800',
+            'https://images.unsplash.com/photo-1494526585095-c41746248156?w=800',
+            'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800',
+            'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800',
+            'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800',
+            'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=800',
+            'https://images.unsplash.com/photo-1583608205776-bfd35f0d9f83?w=800',
+            'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800',
+            'https://images.unsplash.com/photo-1582268611958-ebfd161ef9cf?w=800',
+            'https://images.unsplash.com/photo-1574362848149-11496d93a7c7?w=800',
         ];
+
+        $propertyTypes = ['Rumah', 'Cluster', 'Townhouse', 'Villa'];
 
         foreach ($cities as $city) {
-
             for ($i = 1; $i <= 10; $i++) {
-
-                $randomName =
-                    $propertyNames[
-                        array_rand($propertyNames)
-                    ];
+                $randomName = $propertyNames[array_rand($propertyNames)];
+                $randomDesc = $descriptions[array_rand($descriptions)];
 
                 Property::create([
-
-                    'title' =>
-                        $randomName .
-                        ' - ' .
-                        $city .
-                        ' ' .
-                        $i,
-
+                    'title' => $randomName . ' - ' . $city . ' ' . $i,
                     'location' => $city,
-
-                    'property_type' => [
-                        'Rumah',
-                        'Cluster',
-                        'Townhouse',
-                        'Villa'
-                    ][array_rand([
-                        'Rumah',
-                        'Cluster',
-                        'Townhouse',
-                        'Villa'
-                    ])],
-
-                    'price' => rand(
-                        250000000,
-                        2500000000
-                    ),
-
+                    'property_type' => $propertyTypes[array_rand($propertyTypes)],
+                    'price' => rand(250000000, 2500000000),
                     'bedroom' => rand(2, 5),
-
                     'bathroom' => rand(1, 4),
-
                     'building_area' => rand(45, 250),
-
-                    'condition_score' => rand(70, 100),
-
-                    'grade_score' => rand(70, 100),
-
-                    'description' =>
-                        $randomName .
-                        ' merupakan hunian modern di kawasan ' .
-                        $city .
-                        ' dengan akses strategis, fasilitas lengkap, dan lingkungan yang nyaman untuk keluarga.',
-
-                    'image' =>
-                        $images[
-                            array_rand($images)
-                        ]
+                    'land_area' => rand(80, 350),
+                    'distance_to_center' => rand(1, 15),
+                    'facility_score' => rand(3, 5),
+                    'facility_details' => 'Dekat dengan akses tol|Dekat dengan pusat perbelanjaan|Dekat dengan rumah sakit|Dekat dengan sekolah unggulan',
+                    'security_score' => rand(3, 5),
+                    'security_details' => 'Security 24 jam|One Gate System|CCTV|Satpam profesional',
+                    'condition_score' => rand(65, 100),
+                    'grade_score' => rand(60, 95),
+                    'certificate_type' => ['SHM', 'SHGB', 'Lainnya'][array_rand(['SHM', 'SHGB', 'Lainnya'])],
+                    'description' => $randomDesc,
+                    'image' => $images[array_rand($images)],
+                    'is_active' => true
                 ]);
             }
         }
+
+        $this->call(PropertySeeder::class);
     }
 }

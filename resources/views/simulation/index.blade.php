@@ -27,7 +27,7 @@
         <div class="simulation-card">
 
             <form
-                action="/simulation/calculate"
+                action="{{ route('simulation.calculate') }}"
                 method="POST"
             >
 
@@ -35,73 +35,71 @@
 
                 <div class="row g-4">
 
-                   @if($property)
-<div class="text-center mb-5">
-    <p class="text-muted">
-        Properti yang Disimulasikan
-    </p>
+                    @if($property)
+                    <div class="text-center mb-5">
+                        <p class="text-muted">
+                            Properti yang Disimulasikan
+                        </p>
 
-    <h2 class="fw-bold text-danger">
-        {{ $property->title }}
-    </h2>
-</div>
-@endif
+                        <h2 class="fw-bold text-danger">
+                            {{ $property->title }}
+                        </h2>
+                    </div>
+                    @endif
 
                     {{-- HARGA PROPERTY --}}
+                    <div class="col-md-6">
 
-<div class="col-md-6">
+                        <label class="form-label">
+                            Harga Properti
+                        </label>
 
-    <label class="form-label">
-        Harga Properti
-    </label>
+                        <div class="input-rp">
 
-    <div class="input-rp">
+                            <span>Rp</span>
 
-        <span>Rp</span>
+                            @if($property)
 
-        @if($property)
+                                <input
+                                    type="text"
+                                    value="{{ number_format($property->price,0,',','.') }}"
+                                    readonly
+                                >
 
-            <input
-                type="text"
-                value="{{ number_format($property->price,0,',','.') }}"
-                readonly
-            >
+                                <input
+                                    type="hidden"
+                                    name="harga_properti"
+                                    value="{{ $property->price }}"
+                                >
 
-            <input
-                type="hidden"
-                name="harga_properti"
-                value="{{ $property->price }}"
-            >
+                            @else
 
-        @else
+                                <input
+                                    type="text"
+                                    id="harga_properti_display"
+                                    placeholder="500.000.000"
+                                    required
+                                >
 
-            <input
-                type="text"
-                id="harga_properti_display"
-                placeholder="500.000.000"
-                required
-            >
+                                <input
+                                    type="hidden"
+                                    id="harga_properti"
+                                    name="harga_properti"
+                                >
 
-            <input
-                type="hidden"
-                id="harga_properti"
-                name="harga_properti"
-            >
+                            @endif
 
-        @endif
+                            <input
+                                type="hidden"
+                                name="property_title"
+                                value="{{ $property->title ?? 'Simulasi Umum' }}"
+                            >
 
-        <input
-            type="hidden"
-            name="property_title"
-            value="{{ $property?->title ?? 'Simulasi Umum' }}"
-        >
+                        </div>
 
-    </div>
-
-</div>
+                    </div>
 
                     {{-- PENGHASILAN --}}
-
                     <div class="col-md-6">
 
                         <label class="form-label">
@@ -125,7 +123,6 @@
                     </div>
 
                     {{-- DP --}}
-
                     <div class="col-md-6">
 
                         <label class="form-label">
@@ -149,7 +146,6 @@
                     </div>
 
                     {{-- TENOR --}}
-
                     <div class="col-md-6">
 
                         <label class="form-label">
@@ -165,15 +161,15 @@
                             <option value="5">5 Tahun</option>
                             <option value="10">10 Tahun</option>
                             <option value="15">15 Tahun</option>
-                            <option value="20">20 Tahun</option>
+                            <option value="20" selected>20 Tahun</option>
                             <option value="25">25 Tahun</option>
+                            <option value="30">30 Tahun</option>
 
                         </select>
 
                     </div>
 
                     {{-- JENIS KPR --}}
-
                     <div class="col-md-6">
 
                         <label class="form-label">
@@ -181,7 +177,7 @@
                         </label>
 
                         <select
-                            name="type"
+                            name="jenis_kpr"
                             class="form-select"
                             required
                         >
@@ -202,12 +198,11 @@
 
                     </div>
 
-                    {{-- SUKU BUNGA --}}
-
+                    {{-- SUKU BUNGA FIXED --}}
                     <div class="col-md-6">
 
                         <label class="form-label">
-                            Suku Bunga per Tahun
+                            Suku Bunga per Tahun (Fixed)
                         </label>
 
                         <div class="input-percent">
@@ -217,6 +212,7 @@
                                 step="0.1"
                                 name="interest"
                                 placeholder="5"
+                                value="6"
                                 required
                             >
 
@@ -226,8 +222,7 @@
 
                     </div>
 
-                    {{-- MASA FIXED --}}
-
+                    {{-- MASA KREDIT FIXED --}}
                     <div class="col-md-6">
 
                         <label class="form-label">
@@ -235,28 +230,24 @@
                         </label>
 
                         <select
-                            name="fixed_period"
+                            name="fix_years"
                             class="form-select"
                         >
 
-                            <option value="1">
-                                1 Tahun
-                            </option>
-
-                            <option value="3">
-                                3 Tahun
-                            </option>
-
-                            <option value="5">
-                                5 Tahun
-                            </option>
+                            <option value="0">0 Tahun (Tidak Ada)</option>
+                            <option value="1">1 Tahun</option>
+                            <option value="2">2 Tahun</option>
+                            <option value="3" selected>3 Tahun</option>
+                            <option value="5">5 Tahun</option>
+                            <option value="7">7 Tahun</option>
+                            <option value="10">10 Tahun</option>
 
                         </select>
+                        <small class="text-muted">Pilih 0 jika tidak ada masa fixed</small>
 
                     </div>
 
-                    {{-- FLOATING RATE --}}
-
+                    {{-- SUKU BUNGA FLOATING --}}
                     <div class="col-md-6">
 
                         <label class="form-label">
@@ -268,8 +259,9 @@
                             <input
                                 type="number"
                                 step="0.1"
-                                name="floating_interest"
+                                name="interest_floating"
                                 placeholder="10"
+                                value="10"
                             >
 
                             <span>%</span>
@@ -279,16 +271,15 @@
                     </div>
 
                     {{-- BUTTON --}}
-
                     <div class="col-12 text-center">
 
                         <button
-                        type="submit"
-                        class="btn btn-red"
-                        style="background:#dc2626; color:white; border:none;"
-                    >
-                        Hitung Simulasi
-                    </button>
+                            type="submit"
+                            class="btn btn-red"
+                            style="background:#dc2626; color:white; border:none; padding:16px 60px; border-radius:14px; font-size:18px; font-weight:bold;"
+                        >
+                            Hitung Simulasi
+                        </button>
 
                     </div>
 
@@ -423,34 +414,6 @@ body {
     height: 58px;
 
     border-radius: 14px;
-}
-
-.simulation-btn {
-
-    background: #0056ff;
-
-    color: white;
-
-    border: none;
-
-    padding: 16px 45px;
-
-    border-radius: 14px;
-
-    font-size: 18px;
-
-    font-weight: bold;
-
-    margin-top: 20px;
-
-    transition: 0.3s;
-}
-
-.simulation-btn:hover {
-
-    background: #0043c7;
-
-    transform: translateY(-2px);
 }
 
 </style>

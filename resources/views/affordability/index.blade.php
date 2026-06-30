@@ -14,14 +14,21 @@
 
             <p class="text-muted">
                 Ketahui estimasi kemampuan membeli rumah berdasarkan kondisi finansial Anda.
+                <br>Cukup masukkan penghasilan, pengeluaran, dan jangka waktu.
             </p>
+
+            <div class="afford-features">
+                <span><i class="bi bi-check-circle-fill text-success"></i> Hasil instan & akurat</span>
+                <span><i class="bi bi-check-circle-fill text-success"></i> Perhitungan sederhana</span>
+                <span><i class="bi bi-check-circle-fill text-success"></i> Rekomendasi properti</span>
+            </div>
 
         </div>
 
         <div class="afford-card">
 
             <form
-                action="/affordability/calculate"
+                action="{{ route('affordability.calculate') }}"
                 method="POST"
             >
 
@@ -30,7 +37,6 @@
                 <div class="row g-4">
 
                     {{-- PENGHASILAN --}}
-
                     <div class="col-md-6">
 
                         <label class="form-label">
@@ -56,7 +62,6 @@
                     </div>
 
                     {{-- PENGELUARAN --}}
-
                     <div class="col-md-6">
 
                         <label class="form-label">
@@ -81,8 +86,7 @@
 
                     </div>
 
-                    {{-- TENOR --}}
-
+                    {{-- JANGKA WAKTU --}}
                     <div class="col-md-12">
 
                         <label class="form-label">
@@ -94,36 +98,25 @@
                             class="form-select"
                         >
 
-                            <option value="5">
-                                5 Tahun
-                            </option>
-
-                            <option value="10">
-                                10 Tahun
-                            </option>
-
-                            <option value="15">
-                                15 Tahun
-                            </option>
-
-                            <option value="20">
-                                20 Tahun
-                            </option>
+                            <option value="5">5 Tahun</option>
+                            <option value="10" selected>10 Tahun</option>
+                            <option value="15">15 Tahun</option>
+                            <option value="20">20 Tahun</option>
+                            <option value="25">25 Tahun</option>
+                            <option value="30">30 Tahun</option>
 
                         </select>
 
                     </div>
 
                     {{-- BUTTON --}}
-
                     <div class="col-12 text-center">
 
                         <button
-                        type="submit"
-                        class="btn btn-red"
-                     style="background:#dc2626; color:white; border:none;"
->
-                    Hitung Sekarang
+                            type="submit"
+                            class="btn btn-red"
+                        >
+                            Hitung Sekarang
                         </button>
 
                     </div>
@@ -158,11 +151,31 @@ document.querySelectorAll('.rupiah').forEach(input => {
 
 .afford-section {
 
-    padding: 100px 0;
+    padding: 80px 0;
 
     background: #f5f7fb;
 
     min-height: 100vh;
+}
+
+.afford-features {
+    display: flex;
+    justify-content: center;
+    gap: 28px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+}
+
+.afford-features span {
+    font-size: 14px;
+    color: #1f2937;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.afford-features i {
+    font-size: 16px;
 }
 
 .afford-card {
@@ -180,12 +193,87 @@ document.querySelectorAll('.rupiah').forEach(input => {
     margin: auto;
 }
 
+.form-label {
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #1f2937;
+}
+
 .form-control,
 .form-select {
 
     height: 55px;
 
     border-radius: 12px;
+
+    border: 1.5px solid #e5e7eb;
+
+    background: #fafafa;
+
+    transition: all 0.3s ease;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: #dc2626;
+    box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.10);
+    background: #fff;
+}
+
+.input-group-text {
+    border-radius: 12px 0 0 12px;
+    border: 1.5px solid #e5e7eb;
+    background: #f8fafc;
+    font-weight: 600;
+    color: #4b5563;
+}
+
+.form-control {
+    border-radius: 0 12px 12px 0;
+}
+
+.btn-red {
+    background: #dc2626;
+    color: white;
+    border: none;
+    padding: 14px 50px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    transition: all 0.3s ease;
+}
+
+.btn-red:hover {
+    background: #b91c1c;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(220, 38, 38, 0.30);
+    color: white;
+}
+
+@media (max-width: 768px) {
+
+    .afford-section {
+        padding: 50px 0;
+    }
+
+    .afford-card {
+        padding: 24px 20px;
+    }
+
+    .btn-red {
+        width: 100%;
+        padding: 14px;
+    }
+
+    .afford-features {
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .afford-features span {
+        font-size: 13px;
+    }
 }
 
 </style>

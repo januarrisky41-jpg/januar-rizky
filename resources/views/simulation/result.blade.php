@@ -36,19 +36,22 @@
 
         </div>
 
-        {{-- ============================================================ --}}
         {{-- 3 KARTU UTAMA --}}
-        {{-- ============================================================ --}}
-
         <div class="row g-4">
 
             <div class="col-md-4">
                 <div class="result-card">
                     <p class="result-label">Estimasi Cicilan</p>
                     <h2 class="result-value" style="color:#dc2626; font-weight:bold;">
-                        Rp {{ number_format($installment, 0, ',', '.') }}
+                        Rp {{ number_format($displayInstallment, 0, ',', '.') }}
                     </h2>
-                    <span class="result-small">/ bulan (Fix)</span>
+                    <span class="result-small">/ bulan</span>
+                    @if($fixMonths > 0)
+                        <small class="d-block text-muted mt-1">
+                            <span class="text-success">Fix: Rp {{ number_format($installmentFix, 0, ',', '.') }}</span> | 
+                            <span class="text-danger">Floating: Rp {{ number_format($installmentFloat, 0, ',', '.') }}</span>
+                        </small>
+                    @endif
                 </div>
             </div>
 
@@ -71,7 +74,7 @@
                     <h2 class="result-value">{{ round($installmentPercentage) }}%</h2>
                     <span class="result-small">dari penghasilan bulanan</span>
                     <div class="progress mt-3" style="height:8px; border-radius:10px;">
-                        <div class="progress-bar bg-{{ $status == 'Layak' ? 'success' : ($status == 'Dipertimbangkan' ? 'warning' : 'danger') }}" 
+                        <div class="progress-bar bg-{{ $statusClass }}" 
                              style="width: {{ min($installmentPercentage, 100) }}%; border-radius:10px;">
                         </div>
                     </div>
@@ -80,10 +83,7 @@
 
         </div>
 
-        {{-- ============================================================ --}}
         {{-- DETAIL PERHITUNGAN --}}
-        {{-- ============================================================ --}}
-
         <div class="analysis-card mt-4">
 
             <h3 class="analysis-title">📊 Detail Perhitungan KPR</h3>
@@ -109,13 +109,20 @@
 
                     <div class="analysis-item">
                         <span>Masa Kredit Fixed</span>
-                        <strong>{{ $fixYears }} Tahun</strong>
+                        <strong>{{ $fixYears }} Tahun ({{ $fixMonths }} Bulan)</strong>
                     </div>
 
                     <div class="analysis-item">
                         <span>Suku Bunga Fixed</span>
                         <strong class="text-success">{{ $interestFix * 100 }}%</strong>
                     </div>
+
+                    @if($fixMonths > 0 && $installmentFix > 0)
+                    <div class="analysis-item" style="background:#f0fdf4; border-radius:8px; padding:12px 18px;">
+                        <span><i class="bi bi-check-circle-fill text-success"></i> Cicilan Fixed</span>
+                        <strong class="text-success">Rp {{ number_format($installmentFix, 0, ',', '.') }}</strong>
+                    </div>
+                    @endif
 
                 </div>
 
@@ -141,6 +148,13 @@
                         <strong class="text-danger">{{ $interestFloat * 100 }}%</strong>
                     </div>
 
+                    @if($floatMonths > 0 && $installmentFloat > 0)
+                    <div class="analysis-item" style="background:#fef2f2; border-radius:8px; padding:12px 18px;">
+                        <span><i class="bi bi-exclamation-triangle-fill text-danger"></i> Cicilan Floating</span>
+                        <strong class="text-danger">Rp {{ number_format($installmentFloat, 0, ',', '.') }}</strong>
+                    </div>
+                    @endif
+
                     <div class="analysis-item">
                         <span>Penghasilan / Bulan</span>
                         <strong>Rp {{ number_format($income, 0, ',', '.') }}</strong>
@@ -152,10 +166,7 @@
 
         </div>
 
-        {{-- ============================================================ --}}
         {{-- ANALISIS & REKOMENDASI --}}
-        {{-- ============================================================ --}}
-
         <div class="analysis-card mt-4">
 
             <h3 class="analysis-title">💡 Analisis & Rekomendasi</h3>
@@ -200,49 +211,7 @@
 
         </div>
 
-        {{-- ============================================================ --}}
-        {{-- SIMULASI ALTERNATIF (Jika Tidak Layak) --}}
-        {{-- ============================================================ --}}
-
-        @if($status != 'Layak')
-        <div class="analysis-card mt-4" style="border-left: 5px solid #ffc107;">
-
-            <h3 class="analysis-title">🔄 Simulasi Alternatif</h3>
-
-            <div class="row mt-4">
-
-                <div class="col-md-6">
-
-                    <div class="analysis-item">
-                        <span>Jika Tenor {{ $alternativeTenor }} Tahun</span>
-                        <strong style="color:#dc2626;">Rp {{ number_format($altInstallmentFloat, 0, ',', '.') }}/bulan</strong>
-                    </div>
-
-                </div>
-
-                <div class="col-md-6">
-
-                    <div class="analysis-item">
-                        <span>Jika DP 30%</span>
-                        <strong style="color:#dc2626;">Rp {{ number_format($installmentHigherDp, 0, ',', '.') }}/bulan</strong>
-                    </div>
-
-                </div>
-
-            </div>
-
-            <div class="mt-3 text-muted small">
-                💡 Tips: Perpanjang tenor atau tambah DP untuk menurunkan cicilan bulanan.
-            </div>
-
-        </div>
-        @endif
-
-        {{-- ============================================================ --}}
-        {{-- TABEL AMORTISASI (DETAIL CICILAN) --}}
-        {{-- LETAKKAN DI SINI --}}
-        {{-- ============================================================ --}}
-
+        {{-- TABEL AMORTISASI --}}
         <div class="analysis-card mt-4">
 
             <div class="d-flex justify-content-between align-items-center mb-3">
@@ -256,6 +225,20 @@
                 </a>
 
             </div>
+
+            {{-- INFORMASI PERIODE --}}
+            @if($fixMonths > 0)
+            <div class="alert alert-info py-2 small">
+                <i class="bi bi-info-circle"></i>
+                <strong>Periode Fix:</strong> Bulan 1-{{ $fixMonths }} ({{ $fixYears }} Tahun) dengan bunga <span class="text-success fw-bold">{{ $interestFix * 100 }}%</span> &nbsp;|&nbsp;
+                <strong>Periode Floating:</strong> Bulan {{ $fixMonths+1 }}-{{ $months }} dengan bunga <span class="text-danger fw-bold">{{ $interestFloat * 100 }}%</span>
+            </div>
+            @else
+            <div class="alert alert-warning py-2 small">
+                <i class="bi bi-exclamation-triangle"></i>
+                <strong>Semua periode Floating</strong> dengan bunga <span class="text-danger fw-bold">{{ $interestFloat * 100 }}%</span>
+            </div>
+            @endif
 
             {{-- STATISTIK RINGKASAN --}}
             <div class="row g-3 mb-4">
@@ -298,21 +281,13 @@
                     <thead class="table-danger" style="position: sticky; top: 0; z-index: 10;">
 
                         <tr>
-
                             <th style="min-width: 70px;">Bulan</th>
-
-                            <th style="min-width: 120px;">Periode</th>
-
+                            <th style="min-width: 100px;">Periode</th>
                             <th style="min-width: 150px;">Sisa Pinjaman</th>
-
                             <th style="min-width: 150px;">Porsi Pokok</th>
-
                             <th style="min-width: 150px;">Porsi Bunga</th>
-
                             <th style="min-width: 150px;">Angsuran</th>
-
-                            <th style="min-width: 100px;">Bunga</th>
-
+                            <th style="min-width: 80px;">Bunga</th>
                         </tr>
 
                     </thead>
@@ -322,33 +297,25 @@
                         @forelse($amortizationSchedule as $item)
 
                         <tr>
-
                             <td>{{ $item['month'] }}</td>
-
                             <td>
-                                @if($item['period'] == 'Fix')
+                                @if(str_contains($item['period'], 'Fix'))
                                     <span class="badge bg-success">Fix {{ $fixYears }} Tahun</span>
                                 @else
                                     <span class="badge bg-warning text-dark">Floating</span>
                                 @endif
                             </td>
-
                             <td>Rp {{ number_format($item['remaining_balance'], 0, ',', '.') }}</td>
-
                             <td>Rp {{ number_format($item['principal_paid'], 0, ',', '.') }}</td>
-
                             <td>Rp {{ number_format($item['interest_paid'], 0, ',', '.') }}</td>
-
                             <td>Rp {{ number_format($item['installment'], 0, ',', '.') }}</td>
-
                             <td>
-                                @if($item['period'] == 'Fix')
+                                @if(str_contains($item['period'], 'Fix'))
                                     <span class="text-success fw-bold">{{ $item['interest_rate'] }}%</span>
                                 @else
                                     <span class="text-danger fw-bold">{{ $item['interest_rate'] }}%</span>
                                 @endif
                             </td>
-
                         </tr>
 
                         @empty
@@ -366,30 +333,21 @@
             </div>
 
             <div class="mt-3 text-muted small">
-
                 <i class="bi bi-info-circle"></i>
-
                 Menampilkan semua {{ count($amortizationSchedule) }} bulan.
                 Total bunga yang dibayarkan: <strong>Rp {{ number_format($totalInterestPaidAll, 0, ',', '.') }}</strong>
-
             </div>
 
             <div class="mt-3 alert alert-warning small">
-
                 <i class="bi bi-exclamation-triangle"></i>
-
                 <strong>Catatan:</strong> Perhitungan ini adalah hasil perkiraan aplikasi KPR secara umum.
                 Data perhitungan di atas dapat berbeda dengan perhitungan bank.
                 Untuk perhitungan yang akurat, silakan hubungi kantor cabang kami.
-
             </div>
 
         </div>
 
-        {{-- ============================================================ --}}
-        {{-- REKOMENDASI PROPERTY --}}
-        {{-- ============================================================ --}}
-
+        {{-- REKOMENDASI PROPERTI --}}
         <div class="recommendation-section mt-5">
 
             <h3 class="section-title">🏠 Rekomendasi Properti</h3>
@@ -408,15 +366,15 @@
 
                         <img src="{{ $property->image }}" alt="Property" style="width:100%; height:200px; object-fit:cover;">
 
-                        <div class="property-body">
+                        <div class="property-body" style="padding:20px;">
 
                             <h5>{{ $property->title }}</h5>
-                            <p class="location">{{ $property->location }}</p>
+                            <p class="location" style="color:#777;">{{ $property->location }}</p>
                             <h6 class="price" style="color:#dc2626; font-weight:bold;">
                                 Rp {{ number_format($property->price, 0, ',', '.') }}
                             </h6>
 
-                            <div class="property-info">
+                            <div class="property-info" style="display:flex; gap:15px; margin-top:10px; color:#555;">
                                 <span>🛏 {{ $property->bedroom }} KT</span>
                                 <span>🚿 {{ $property->bathroom }} KM</span>
                             </div>
@@ -446,227 +404,77 @@
 <style>
 
 .result-hero {
-
     position: relative;
-
     min-height: 320px;
-
-    background:
-        linear-gradient(
-            rgba(0,0,0,0.55),
-            rgba(0,0,0,0.55)
-        ),
+    background: linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)),
         url('https://images.unsplash.com/photo-1560518883-ce09059eeffa');
-
     background-size: cover;
-
     background-position: center;
-
     display: flex;
-
     align-items: center;
 }
 
-.overlay {
+.overlay { position: absolute; inset: 0; }
+.hero-title { font-size: 52px; font-weight: 800; }
+.hero-subtitle { font-size: 18px; margin-top: 15px; }
 
-    position: absolute;
-
-    inset: 0;
-}
-
-.hero-title {
-
-    font-size: 52px;
-
-    font-weight: 800;
-}
-
-.hero-subtitle {
-
-    font-size: 18px;
-
-    margin-top: 15px;
-}
-
-.result-section {
-
-    padding: 80px 0;
-
-    background: #f4f7fb;
-}
+.result-section { padding: 80px 0; background: #f4f7fb; }
 
 .result-card {
-
     background: white;
-
     border-radius: 22px;
-
     padding: 35px;
-
     text-align: center;
-
     box-shadow: 0 5px 20px rgba(0,0,0,0.08);
-
     height: 100%;
 }
 
-.result-label {
-
-    color: #666;
-
-    font-size: 15px;
-}
-
-.result-value {
-
-    font-size: 34px;
-
-    font-weight: 800;
-
-    margin-top: 10px;
-}
-
-.result-small {
-
-    color: #888;
-}
+.result-label { color: #666; font-size: 15px; }
+.result-value { font-size: 34px; font-weight: 800; margin-top: 10px; }
+.result-small { color: #888; }
 
 .status {
-
     display: inline-block;
-
     padding: 12px 25px;
-
     border-radius: 30px;
-
     font-weight: bold;
-
     margin-top: 20px;
 }
 
-.success {
-
-    background: #d4edda;
-
-    color: #155724;
-}
-
-.warning {
-
-    background: #fff3cd;
-
-    color: #856404;
-}
-
-.danger {
-
-    background: #f8d7da;
-
-    color: #721c24;
-}
+.success { background: #d4edda; color: #155724; }
+.warning { background: #fff3cd; color: #856404; }
+.danger { background: #f8d7da; color: #721c24; }
 
 .analysis-card {
-
     background: white;
-
     border-radius: 25px;
-
     padding: 40px;
-
     box-shadow: 0 5px 20px rgba(0,0,0,0.08);
 }
 
-.analysis-title {
-
-    font-weight: 800;
-
-    color: #222;
-}
+.analysis-title { font-weight: 800; color: #222; }
 
 .analysis-item {
-
     display: flex;
-
     justify-content: space-between;
-
     padding: 18px 0;
-
     border-bottom: 1px solid #eee;
 }
 
-.section-title {
-
-    font-size: 32px;
-
-    font-weight: 800;
-}
+.section-title { font-size: 32px; font-weight: 800; }
 
 .property-card {
-
     background: white;
-
     border-radius: 20px;
-
     overflow: hidden;
-
     box-shadow: 0 5px 20px rgba(0,0,0,0.08);
-
     transition: 0.3s;
-
     height: 100%;
 }
 
-.property-card:hover {
+.property-card:hover { transform: translateY(-6px); }
 
-    transform: translateY(-6px);
-}
-
-.property-card img {
-
-    width: 100%;
-
-    height: 220px;
-
-    object-fit: cover;
-}
-
-.property-body {
-
-    padding: 22px;
-}
-
-.location {
-
-    color: #777;
-}
-
-.price {
-
-    color: #0056ff;
-
-    font-weight: 800;
-
-    margin-top: 10px;
-}
-
-.property-info {
-
-    display: flex;
-
-    gap: 20px;
-
-    margin-top: 15px;
-
-    color: #555;
-}
-
-.progress {
-    background-color: #e9ecef;
-}
-
-.table-responsive {
-    overflow-x: auto;
-}
+.progress { background-color: #e9ecef; }
 
 .table-responsive::-webkit-scrollbar {
     width: 8px;

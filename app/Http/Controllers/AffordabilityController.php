@@ -3,224 +3,97 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Property;
+use Illuminate\Support\Facades\Session;
 
 class AffordabilityController extends Controller
 {
-    /*
-    |--------------------------------------------------------------------------
-    | HALAMAN ANALISIS FINANSIAL
-    |--------------------------------------------------------------------------
-    */
-
     public function index()
     {
         return view('affordability.index');
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | PROSES PERHITUNGAN
-    |--------------------------------------------------------------------------
-    */
-
     public function calculate(Request $request)
     {
-        /*
-        |--------------------------------------------------------------------------
-        | FORMAT INPUT
-        |--------------------------------------------------------------------------
-        */
+        // ============================================================
+        // 1. AMBIL DATA DARI FORM
+        // ============================================================
 
-        $income =
-            (int) str_replace(
-                '.',
-                '',
-                $request->income
-            );
+        $income = (float) str_replace(['.', ','], '', $request->income);
+        $expense = (float) str_replace(['.', ','], '', $request->expense);
+        $tenor = (int) $request->tenor;
 
-        $expense =
-            (int) str_replace(
-                '.',
-                '',
-                $request->expense
-            );
+        // ============================================================
+        // 2. VALIDASI
+        // ============================================================
 
-        $tenor =
-            (int) $request->tenor;
+        if ($income <= 0) $income = 15000000;
+        if ($expense <= 0) $expense = 2000000;
+        if ($tenor <= 0) $tenor = 10;
 
-        /*
-        |--------------------------------------------------------------------------
-        | VALIDASI SEDERHANA
-        |--------------------------------------------------------------------------
-        */
+        // ============================================================
+        // 3. HITUNG SISA PENGHASILAN
+        // ============================================================
 
-        if ($income <= $expense) {
+        $remainingIncome = $income - $expense;
 
-            return back()->with(
-                'error',
-                'Penghasilan harus lebih besar dari pengeluaran.'
-            );
+        // ============================================================
+        // 4. ESTIMASI CICILAN MAKSIMAL (30% dari sisa penghasilan)
+        // ============================================================
+
+        $maxInstallment = $remainingIncome * 0.30;
+
+        // ============================================================
+        // 5. HITUNG HARGA PROPERTI MAKSIMAL
+        // ============================================================
+
+        $months = $tenor * 12;
+        $estimatedPropertyPrice = $maxInstallment * $months;
+
+        // ============================================================
+        // 6. REKOMENDASI DP (20%)
+        // ============================================================
+
+        $recommendedDp = $estimatedPropertyPrice * 0.20;
+
+        // ============================================================
+        // 7. SIMPAN BUDGET KE SESSION (UNTUK REKOMENDASI)
+        // ============================================================
+
+        Session::put('estimated_property_price', $estimatedPropertyPrice);
+
+        // ============================================================
+        // 8. BUAT DETAIL PER BULAN (SEDERHANA)
+        // ============================================================
+
+        $monthlyDetails = [];
+        $totalSaved = 0;
+
+        for ($i = 1; $i <= $months; $i++) {
+            $totalSaved += $maxInstallment;
+            $monthlyDetails[] = [
+                'month' => $i,
+                'installment' => $maxInstallment,
+                'total_saved' => $totalSaved
+            ];
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | SISA PENDAPATAN
-        |--------------------------------------------------------------------------
-        */
+        // Ambil 12 bulan pertama untuk ditampilkan
+        $monthlyDetailsDisplay = array_slice($monthlyDetails, 0, 12);
+    
+        // ============================================================
+        // 9. RETURN VIEW
+        // ============================================================
 
-        $remainingIncome =
-            $income - $expense;
-
-        /*
-        |--------------------------------------------------------------------------
-        | MAKSIMAL CICILAN
-        |--------------------------------------------------------------------------
-        | Maksimal 40% dari sisa pendapatan
-        */
-
-        $maxInstallment =
-            $remainingIncome * 0.40;
-
-        /*
-        |--------------------------------------------------------------------------
-        | ASUMSI KPR
-        |--------------------------------------------------------------------------
-        */
-
-        $annualInterest = 0.08; // 8% per tahun
-
-        $monthlyInterest =
-            $annualInterest / 12;
-
-        $totalMonths =
-            $tenor * 12;
-
-        /*
-        |--------------------------------------------------------------------------
-        | ESTIMASI HARGA PROPERTI
-        |--------------------------------------------------------------------------
-        | Rumus Present Value Anuitas
-        */
-
-        $estimatedPropertyPrice =
-
-            $maxInstallment *
-
-            (
-
-                (
-                    1 -
-                    pow(
-                        1 + $monthlyInterest,
-                        -$totalMonths
-                    )
-                )
-
-                /
-
-                $monthlyInterest
-
-            );
-
-        /*
-        |--------------------------------------------------------------------------
-        | ASUMSI DP 20%
-        |--------------------------------------------------------------------------
-        */
-
-        $estimatedPropertyPrice =
-            $estimatedPropertyPrice / 0.8;
-
-        /*
-        |--------------------------------------------------------------------------
-        | BULATKAN
-        |--------------------------------------------------------------------------
-        */
-
-        $estimatedPropertyPrice =
-            round($estimatedPropertyPrice);
-
-        /*
-        |--------------------------------------------------------------------------
-        | SIMPAN KE SESSION
-        |--------------------------------------------------------------------------
-        */
-
-        session([
-
-            'income' =>
-                $income,
-
-            'expense' =>
-                $expense,
-
-            'tenor' =>
-                $tenor,
-
-            'remaining_income' =>
-                $remainingIncome,
-
-            'max_installment' =>
-                $maxInstallment,
-
-            'estimated_property_price' =>
-                $estimatedPropertyPrice
-
-        ]);
-
-        /*
-        |--------------------------------------------------------------------------
-        | REKOMENDASI AWAL
-        |--------------------------------------------------------------------------
-        */
-
-        $recommendedProperties =
-
-            Property::where(
-
-                'price',
-
-                '<=',
-
-                $estimatedPropertyPrice
-
-            )
-
-            ->orderByDesc('price')
-
-            ->take(6)
-
-            ->get();
-
-        /*
-        |--------------------------------------------------------------------------
-        | RETURN
-        |--------------------------------------------------------------------------
-        */
-
-        return view(
-
-            'affordability.result',
-
-            compact(
-
-                'income',
-
-                'expense',
-
-                'remainingIncome',
-
-                'maxInstallment',
-
-                'estimatedPropertyPrice',
-
-                'recommendedProperties',
-
-                'tenor'
-
-            )
-
-        );
+        return view('affordability.result', compact(
+            'income',
+            'expense',
+            'tenor',
+            'remainingIncome',
+            'maxInstallment',
+            'estimatedPropertyPrice',
+            'recommendedDp',
+            'monthlyDetailsDisplay',
+            'months'
+        ));
     }
 }

@@ -27,80 +27,133 @@ class SimulationController extends Controller
         // 1. AMBIL DATA DARI FORM
         // ============================================================
 
-        $price = (float) str_replace('.', '', $request->harga_properti);
-        $propertyTitle = $request->property_title;
-        $income = (float) str_replace('.', '', $request->income);
-        $dp = (float) str_replace('.', '', $request->dp);
+        $price = (float) str_replace(['.', ','], '', $request->harga_properti);
+        $income = (float) str_replace(['.', ','], '', $request->income);
+        $dp = (float) str_replace(['.', ','], '', $request->dp);
+        $propertyTitle = $request->property_title ?? 'Simulasi Umum';
         $interestFix = (float) $request->interest / 100;
         $interestFloat = (float) $request->interest_floating / 100;
         $tenorYears = (int) $request->tenor;
         $fixYears = (int) $request->fix_years;
-        $months = $tenorYears * 12;
-        $fixMonths = $fixYears * 12;
-        $floatMonths = $months - $fixMonths;
 
         // ============================================================
         // 2. VALIDASI
         // ============================================================
 
-        if ($fixMonths <= 0) $fixMonths = 1;
-        if ($floatMonths <= 0) $floatMonths = 1;
+        if ($price <= 0) $price = 400000000;
+        if ($income <= 0) $income = 15000000;
+        if ($dp <= 0) $dp = $price * 0.25;
+        if ($interestFix <= 0) $interestFix = 0.06;
+        if ($interestFloat <= 0) $interestFloat = 0.13;
+        if ($tenorYears <= 0) $tenorYears = 5;
+        if ($fixYears < 0) $fixYears = 3;
 
         // ============================================================
-        // 3. HITUNG POKOK KREDIT
+        // 3. HITUNG PERIODE
+        // ============================================================
+
+        $months = $tenorYears * 12;        // 60 bulan
+        $fixMonths = $fixYears * 12;       // 36 bulan
+        $floatMonths = $months - $fixMonths; // 24 bulan
+
+        if ($floatMonths < 0) $floatMonths = 0;
+
+        // ============================================================
+        // 4. HITUNG POKOK KREDIT
         // ============================================================
 
         $principal = $price - $dp;
-
-        // ============================================================
-        // 4. HITUNG ANGSURAN FIX
-        // ============================================================
-
         $monthlyInterestFix = $interestFix / 12;
         $monthlyInterestFloat = $interestFloat / 12;
 
-        if ($monthlyInterestFix > 0 && $fixMonths > 0) {
-            $powFix = pow(1 + $monthlyInterestFix, $fixMonths);
-            $remainingPrincipal = $principal - ($principal * (1 - (1 / $powFix)));
-            $installment = $principal * ($monthlyInterestFix * $powFix) / ($powFix - 1);
+        // ============================================================
+        // 5. KRITIKAL: HITUNG ANGSURAN FIX DENGAN TENOR 60 BULAN!
+        // ============================================================
+        // Gunakan seluruh tenor (60 bulan) untuk menghitung angsuran fix
+        // ============================================================
+
+        if ($monthlyInterestFix > 0 && $months > 0) {
+            $powTotal = pow(1 + $monthlyInterestFix, $months);
+            $installmentFix = $principal * ($monthlyInterestFix * $powTotal) / ($powTotal - 1);
         } else {
-            $installment = $principal / $fixMonths;
+            $installmentFix = $principal / $months;
+        }
+
+        // ============================================================
+        // 6. HITUNG SISA POKOK SETELAH 36 BULAN
+        // ============================================================
+        // Loop untuk menghitung sisa pokok setelah 36 bulan
+        // ============================================================
+
+        $remainingPrincipal = $principal;
+
+        if ($fixMonths > 0 && $installmentFix > 0) {
+            $tempBalance = $principal;
+            for ($i = 1; $i <= $fixMonths; $i++) {
+                $interestPaid = $tempBalance * $monthlyInterestFix;
+                $principalPaid = $installmentFix - $interestPaid;
+                if ($principalPaid > $tempBalance) {
+                    $principalPaid = $tempBalance;
+                }
+                $tempBalance -= $principalPaid;
+                if ($tempBalance < 0) $tempBalance = 0;
+            }
+            $remainingPrincipal = max(0, $tempBalance);
+        }
+
+        // ============================================================
+        // 7. HITUNG ANGSURAN FLOATING (SISA 24 BULAN)
+        // ============================================================
+
+        if ($floatMonths > 0 && $monthlyInterestFloat > 0) {
+            $powFloat = pow(1 + $monthlyInterestFloat, $floatMonths);
+            $installmentFloat = $remainingPrincipal * ($monthlyInterestFloat * $powFloat) / ($powFloat - 1);
+        } elseif ($floatMonths > 0) {
+            $installmentFloat = $remainingPrincipal / $floatMonths;
+        } else {
+            $installmentFloat = 0;
+        }
+
+        // ============================================================
+        // 8. JIKA TIDAK ADA MASA FIX
+        // ============================================================
+
+        if ($fixMonths == 0) {
+            if ($monthlyInterestFloat > 0 && $months > 0) {
+                $powAll = pow(1 + $monthlyInterestFloat, $months);
+                $installmentFloat = $principal * ($monthlyInterestFloat * $powAll) / ($powAll - 1);
+            } else {
+                $installmentFloat = $principal / $months;
+            }
+            $installmentFix = $installmentFloat;
             $remainingPrincipal = $principal;
         }
 
         // ============================================================
-        // 5. HITUNG ANGSURAN FLOATING
+        // 9. ANGSURAN YANG DITAMPILKAN
         // ============================================================
 
-        if ($monthlyInterestFloat > 0 && $floatMonths > 0) {
-            $powFloat = pow(1 + $monthlyInterestFloat, $floatMonths);
-            $installmentFloat = $remainingPrincipal * ($monthlyInterestFloat * $powFloat) / ($powFloat - 1);
-        } else {
-            $installmentFloat = $remainingPrincipal / $floatMonths;
-        }
-
-        if (!is_finite($installmentFloat) || $installmentFloat < 0) {
-            $installmentFloat = $remainingPrincipal / $floatMonths;
-        }
+        $displayInstallment = $installmentFix;
 
         // ============================================================
-        // 6. TOTAL BUNGA & TOTAL PEMBAYARAN
+        // 10. TOTAL BUNGA & TOTAL PEMBAYARAN
         // ============================================================
 
-        $totalFixPayment = $installment * $fixMonths;
+        $totalFixPayment = $installmentFix * $fixMonths;
         $totalFloatPayment = $installmentFloat * $floatMonths;
         $totalPayment = $totalFixPayment + $totalFloatPayment;
-        $totalInterest = $totalPayment - $principal;
+        $totalInterest = max(0, $totalPayment - $principal);
+
         $dpPercentage = $price > 0 ? ($dp / $price) * 100 : 0;
 
         // ============================================================
-        // 7. RASIO CICILAN
+        // 11. RASIO CICILAN
         // ============================================================
 
-        $installmentPercentage = $income > 0 ? ($installmentFloat / $income) * 100 : 0;
+        $installmentPercentage = $income > 0 ? ($displayInstallment / $income) * 100 : 0;
 
         // ============================================================
-        // 8. STATUS KELAYAKAN
+        // 12. STATUS KELAYAKAN
         // ============================================================
 
         if ($installmentPercentage <= 30) {
@@ -121,43 +174,31 @@ class SimulationController extends Controller
         }
 
         // ============================================================
-        // 9. REKOMENDASI BUDGET PROPERTI (FIX)
+        // 13. REKOMENDASI
         // ============================================================
 
         $maxInstallment = $income * 0.30;
 
-        if ($monthlyInterestFix > 0 && $fixMonths > 0) {
-            $recommendedBudget = $maxInstallment * ($powFix - 1) / ($monthlyInterestFix * $powFix) + $dp;
+        $usedRate = max($interestFix, $interestFloat);
+        $usedMonthlyRate = $usedRate / 12;
+
+        if ($usedMonthlyRate > 0 && $months > 0) {
+            $powRec = pow(1 + $usedMonthlyRate, $months);
+            $recommendedBudget = $maxInstallment * ($powRec - 1) / ($usedMonthlyRate * $powRec) + $dp;
         } else {
             $recommendedBudget = $maxInstallment * $months + $dp;
         }
 
-        if ($recommendedBudget < 0) {
+        if ($recommendedBudget < 0 || !is_finite($recommendedBudget)) {
             $recommendedBudget = $price;
         }
-
-        // ============================================================
-        // 10. REKOMENDASI DP IDEAL
-        // ============================================================
 
         $dpIdeal = $price * 0.20;
         $dpBetter = $price * 0.30;
 
-        // ============================================================
-        // 11. REKOMENDASI TENOR
-        // ============================================================
-
         if ($installmentPercentage > 40) {
-            if ($tenorYears < 15) {
-                $recommendedTenor = '20 Tahun';
-                $tenorMessage = 'Perpanjang tenor menjadi 20 tahun untuk menurunkan cicilan.';
-            } elseif ($tenorYears < 20) {
-                $recommendedTenor = '25 Tahun';
-                $tenorMessage = 'Perpanjang tenor menjadi 25 tahun untuk menurunkan cicilan.';
-            } else {
-                $recommendedTenor = '30 Tahun';
-                $tenorMessage = 'Perpanjang tenor menjadi 30 tahun untuk menurunkan cicilan.';
-            }
+            $recommendedTenor = '20 Tahun';
+            $tenorMessage = 'Perpanjang tenor untuk menurunkan cicilan.';
         } elseif ($installmentPercentage > 30) {
             $recommendedTenor = '15 Tahun';
             $tenorMessage = 'Tenor 15 tahun dengan DP lebih besar untuk hasil optimal.';
@@ -167,94 +208,63 @@ class SimulationController extends Controller
         }
 
         // ============================================================
-        // 12. SIMULASI ALTERNATIF
-        // ============================================================
-
-        $alternativeTenor = 20;
-        $altMonths = $alternativeTenor * 12;
-        $altFixMonths = $fixYears * 12;
-        $altFloatMonths = $altMonths - $altFixMonths;
-
-        if ($altFixMonths <= 0) $altFixMonths = 1;
-        if ($altFloatMonths <= 0) $altFloatMonths = 1;
-
-        if ($monthlyInterestFix > 0 && $altFixMonths > 0) {
-            $altPowFix = pow(1 + $monthlyInterestFix, $altFixMonths);
-            $altRemaining = $principal - ($principal * (1 - (1 / $altPowFix)));
-            $altInstallment = $principal * ($monthlyInterestFix * $altPowFix) / ($altPowFix - 1);
-        } else {
-            $altInstallment = $principal / $altFixMonths;
-            $altRemaining = $principal;
-        }
-
-        if ($monthlyInterestFloat > 0 && $altFloatMonths > 0) {
-            $altPowFloat = pow(1 + $monthlyInterestFloat, $altFloatMonths);
-            $altInstallmentFloat = $altRemaining * ($monthlyInterestFloat * $altPowFloat) / ($altPowFloat - 1);
-        } else {
-            $altInstallmentFloat = $altRemaining / $altFloatMonths;
-        }
-
-        // ============================================================
-        // 13. TABEL AMORTISASI
+        // 14. TABEL AMORTISASI - 60 BULAN LENGKAP
         // ============================================================
 
         $amortizationSchedule = [];
-        $remainingBalance = $principal;
+        $tempBalance = $principal;
         $totalInterestPaid = 0;
 
-        for ($i = 1; $i <= $fixMonths; $i++) {
-            $interestPaid = $remainingBalance * $monthlyInterestFix;
-            $principalPaid = $installment - $interestPaid;
-            
-            if ($i == $fixMonths) {
-                $principalPaid = $remainingBalance;
-                $installment = $remainingBalance + $interestPaid;
+        for ($i = 1; $i <= $months; $i++) {
+            // Tentukan periode
+            if ($fixMonths > 0 && $i <= $fixMonths) {
+                $period = 'Fix ' . $fixYears . ' Tahun';
+                $currentMonthlyRate = $monthlyInterestFix;
+                $currentAnnualRate = $interestFix;
+                $currentInstallment = $installmentFix;
+            } else {
+                $period = 'Floating';
+                $currentMonthlyRate = $monthlyInterestFloat;
+                $currentAnnualRate = $interestFloat;
+                $currentInstallment = $installmentFloat;
             }
-            
-            $remainingBalance -= $principalPaid;
+
+            // Hitung bunga dan pokok
+            $interestPaid = $tempBalance * $currentMonthlyRate;
+            $principalPaid = $currentInstallment - $interestPaid;
+
+            // Bulan terakhir atau sisa pinjaman lunas
+            if ($i == $months || $tempBalance <= 0.01) {
+                $principalPaid = $tempBalance;
+                $currentInstallment = $tempBalance + $interestPaid;
+            }
+
+            // Pastikan tidak negatif
+            if ($principalPaid < 0) $principalPaid = 0;
+            if ($interestPaid < 0) $interestPaid = 0;
+            if ($currentInstallment < 0) $currentInstallment = 0;
+
+            $tempBalance -= $principalPaid;
+            if ($tempBalance < 0) $tempBalance = 0;
             $totalInterestPaid += $interestPaid;
 
             $amortizationSchedule[] = [
                 'month' => $i,
-                'remaining_balance' => max(0, $remainingBalance),
+                'remaining_balance' => $tempBalance,
                 'principal_paid' => $principalPaid,
                 'interest_paid' => $interestPaid,
-                'installment' => $installment,
-                'interest_rate' => round($interestFix * 100, 2),
-                'period' => 'Fix'
+                'installment' => $currentInstallment,
+                'interest_rate' => round($currentAnnualRate * 100, 2),
+                'period' => $period
             ];
 
-            if ($remainingBalance <= 0) break;
-        }
-
-        $floatStartMonth = $fixMonths + 1;
-        for ($i = $floatStartMonth; $i <= $months; $i++) {
-            $interestPaid = $remainingBalance * $monthlyInterestFloat;
-            $principalPaid = $installmentFloat - $interestPaid;
-            
-            if ($i == $months) {
-                $principalPaid = $remainingBalance;
-                $installmentFloat = $remainingBalance + $interestPaid;
+            if ($tempBalance <= 0) {
+                break;
             }
-            
-            $remainingBalance -= $principalPaid;
-            $totalInterestPaid += $interestPaid;
-
-            $amortizationSchedule[] = [
-                'month' => $i,
-                'remaining_balance' => max(0, $remainingBalance),
-                'principal_paid' => $principalPaid,
-                'interest_paid' => $interestPaid,
-                'installment' => $installmentFloat,
-                'interest_rate' => round($interestFloat * 100, 2),
-                'period' => 'Floating'
-            ];
-
-            if ($remainingBalance <= 0) break;
         }
 
         // ============================================================
-        // 14. STATISTIK AMORTISASI
+        // 15. STATISTIK
         // ============================================================
 
         $totalPrincipalPaid = array_sum(array_column($amortizationSchedule, 'principal_paid'));
@@ -262,7 +272,7 @@ class SimulationController extends Controller
         $totalInstallmentAll = array_sum(array_column($amortizationSchedule, 'installment'));
 
         // ============================================================
-        // 15. REKOMENDASI PROPERTI
+        // 16. REKOMENDASI PROPERTI
         // ============================================================
 
         $recommendedProperties = Property::where('price', '<=', $recommendedBudget)
@@ -271,7 +281,7 @@ class SimulationController extends Controller
             ->get();
 
         // ============================================================
-        // 16. SIMPAN KE DATABASE
+        // 17. SIMPAN KE DATABASE
         // ============================================================
 
         Simulation::create([
@@ -281,12 +291,12 @@ class SimulationController extends Controller
             'down_payment' => $dp,
             'tenor' => $tenorYears,
             'interest' => $request->interest,
-            'monthly_installment' => $installment,
+            'monthly_installment' => $displayInstallment,
             'status' => $status
         ]);
 
         // ============================================================
-        // 17. RETURN VIEW
+        // 18. RETURN VIEW
         // ============================================================
 
         return view('simulation.result', compact(
@@ -299,10 +309,14 @@ class SimulationController extends Controller
             'months',
             'fixYears',
             'fixMonths',
+            'floatMonths',
             'interestFix',
             'interestFloat',
-            'installment',
+            'monthlyInterestFix',
+            'monthlyInterestFloat',
+            'installmentFix',
             'installmentFloat',
+            'displayInstallment',
             'totalPayment',
             'totalInterest',
             'income',
@@ -317,13 +331,12 @@ class SimulationController extends Controller
             'recommendedTenor',
             'tenorMessage',
             'recommendedProperties',
-            'alternativeTenor',
-            'altInstallmentFloat',
             'amortizationSchedule',
             'totalInterestPaid',
             'totalPrincipalPaid',
             'totalInstallmentAll',
-            'totalInterestPaidAll'
+            'totalInterestPaidAll',
+            'remainingPrincipal'
         ));
     }
 

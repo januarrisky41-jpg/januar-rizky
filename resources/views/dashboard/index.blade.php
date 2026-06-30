@@ -9,22 +9,17 @@
         <div class="dashboard-header text-center">
 
             <h1>
-
                 Dashboard Properti
-
             </h1>
 
             <p>
-
                 Statistik dan informasi properti dalam sistem
                 Properti Merah Putih
-
             </p>
 
         </div>
 
         {{-- SUMMARY CARD --}}
-
         <div class="row g-4 mb-5">
 
             <div class="col-lg-2 col-md-4">
@@ -34,9 +29,7 @@
                     <small>Total Properti</small>
 
                     <h2>
-
                         {{ $totalProperties }}
-
                     </h2>
 
                 </div>
@@ -50,9 +43,7 @@
                     <small>Total Kota</small>
 
                     <h2>
-
                         {{ $totalCities }}
-
                     </h2>
 
                 </div>
@@ -66,9 +57,7 @@
                     <small>Harga Rata-rata</small>
 
                     <h2>
-
-                        {{ number_format($averagePrice/1000000,0,',','.') }} JT
-
+                        {{ formatRupiahShort($averagePrice) }}
                     </h2>
 
                 </div>
@@ -82,9 +71,7 @@
                     <small>Harga Termurah</small>
 
                     <h2>
-
-                        {{ number_format($minPrice/1000000,0,',','.') }} JT
-
+                        {{ formatRupiahShort($minPrice) }}
                     </h2>
 
                 </div>
@@ -98,9 +85,7 @@
                     <small>Harga Tertinggi</small>
 
                     <h2>
-
-                        {{ number_format($maxPrice/1000000,0,',','.') }} JT
-
+                        {{ formatRupiahShort($maxPrice) }}
                     </h2>
 
                 </div>
@@ -114,9 +99,7 @@
                     <small>Total Favorit</small>
 
                     <h2>
-
                         {{ \App\Models\Favorite::count() }}
-
                     </h2>
 
                 </div>
@@ -126,15 +109,12 @@
         </div>
 
         {{-- STATISTIK KOTA --}}
-
         <div class="card shadow border-0 mb-5">
 
             <div class="card-header bg-danger text-white">
 
                 <h4 class="mb-0">
-
                     Statistik Properti Per Kota
-
                 </h4>
 
             </div>
@@ -146,11 +126,8 @@
                     <thead>
 
                         <tr>
-
                             <th>Kota</th>
-
                             <th>Jumlah Properti</th>
-
                         </tr>
 
                     </thead>
@@ -162,15 +139,11 @@
                         <tr>
 
                             <td>
-
                                 {{ $city->location }}
-
                             </td>
 
                             <td>
-
                                 {{ $city->total }}
-
                             </td>
 
                         </tr>
@@ -186,15 +159,12 @@
         </div>
 
         {{-- PROPERTI TERBARU --}}
-
         <div class="card shadow border-0">
 
             <div class="card-header text-white" style="background:#dc2626;">
 
                 <h4 class="mb-0">
-
                     Properti Terbaru
-
                 </h4>
 
             </div>
@@ -207,37 +177,59 @@
 
                     <div class="col-lg-4">
 
-                        <div class="property-card">
+                        {{-- SELURUH CARD DIBUNGKUS LINK --}}
+                        <a href="{{ route('properties.show', $property->id) }}" 
+                           class="text-decoration-none text-dark">
 
-                            <img
-                                src="{{ $property->image }}"
-                                class="img-fluid rounded-top"
-                                style="height:220px;width:100%;object-fit:cover;"
-                            >
+                            <div class="property-card">
 
-                            <div class="p-3">
+                                <img
+                                    src="{{ $property->image }}"
+                                    class="img-fluid rounded-top"
+                                    style="height:220px;width:100%;object-fit:cover;"
+                                    alt="{{ $property->title }}"
+                                >
 
-                                <h5>
+                                <div class="p-3">
 
-                                    {{ $property->title }}
+                                    <div class="d-flex justify-content-between align-items-start">
 
-                                </h5>
+                                        <h5 class="mb-0">
+                                            {{ $property->title }}
+                                        </h5>
 
-                                <p class="text-muted">
+                                        <span class="badge bg-secondary">
+                                            {{ $property->property_type ?? 'Properti' }}
+                                        </span>
 
-                                    📍 {{ $property->location }}
+                                    </div>
 
-                                </p>
+                                    <p class="text-muted mt-1">
+                                        📍 {{ $property->location }}
+                                    </p>
 
-                                <h6 class="text-danger fw-bold">
+                                    {{-- ANGKA PENUH (TANPA SINGKATAN) --}}
+                                    <h6 class="text-danger fw-bold">
+                                        Rp {{ number_format($property->price, 0, ',', '.') }}
+                                    </h6>
 
-                                    Rp{{ number_format($property->price,0,',','.') }}
+                                    <div class="d-flex gap-3 mt-2 text-muted small">
+                                        <span>🛏 {{ $property->bedroom }} KT</span>
+                                        <span>🚿 {{ $property->bathroom }} KM</span>
+                                        <span>📐 {{ $property->building_area }} m²</span>
+                                    </div>
 
-                                </h6>
+                                    <div class="mt-3">
+                                        <span class="btn btn-outline-danger btn-sm w-100">
+                                            Lihat Detail
+                                        </span>
+                                    </div>
+
+                                </div>
 
                             </div>
 
-                        </div>
+                        </a>
 
                     </div>
 
@@ -278,33 +270,22 @@ body{
 }
 
 .analytics-card{
-
     background:white;
-
     padding:25px;
-
     border-radius:20px;
-
     box-shadow:0 4px 15px rgba(0,0,0,.08);
-
     text-align:center;
-
     height:100%;
 }
 
 .analytics-card small{
-
     color:#64748b;
-
     font-weight:600;
 }
 
 .analytics-card h2{
-
     margin-top:10px;
-
     font-size:28px;
-
     font-weight:800;
 }
 
@@ -334,20 +315,14 @@ body{
 }
 
 .property-card{
-
     background:white;
-
     border-radius:20px;
-
     overflow:hidden;
-
     box-shadow:0 5px 15px rgba(251, 9, 9, 0.08);
-
     transition:.3s;
 }
 
 .property-card:hover{
-
     transform:translateY(-5px);
 }
 
@@ -378,3 +353,18 @@ body{
 </style>
 
 @endsection
+
+@push('scripts')
+<script>
+    // Jika helper function belum terdaftar, tambahkan fungsi ini
+    function formatRupiahShort(number) {
+        if (number >= 1000000000) {
+            return 'Rp ' + (number / 1000000000).toFixed(2).replace('.', ',') + ' M';
+        } else if (number >= 1000000) {
+            return 'Rp ' + (number / 1000000).toFixed(0).replace('.', ',') + ' JT';
+        } else {
+            return 'Rp ' + number.toLocaleString('id-ID');
+        }
+    }
+</script>
+@endpush
